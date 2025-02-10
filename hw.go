@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -33,18 +35,31 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	player := &Player{conn: conn}
 	players = append(players, player)
 
-	// Wait for number
-	_, msg, err := conn.ReadMessage()
-	if err != nil {
-		log.Println("Read error:", err)
-		return
-	}
+	// Channel to receive number from the player
+	numberChan := make(chan int)
 
-	if msg[0] != '1' && msg[0] != '2' {
-		conn.WriteMessage(websocket.TextMessage, []byte("Invalid input! Send '1' or '2'."))
-		return
+	// Start a goroutine to wait for player input
+	go func() {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Read error:", err)
+			return
+		}
+		if msg[0] != '1' && msg[0] != '2' {
+			conn.WriteMessage(websocket.TextMessage, []byte("Invalid input! Send '1' or '2'."))
+			return
+		}
+		numberChan <- int(msg[0] - '0')
+	}()
+
+	// Wait for input with a timeout of 10 seconds
+	select {
+	case num := <-numberChan:
+		player.number = num
+	case <-time.After(10 * time.Second):
+		player.number = rand.Intn(2) + 1 // Default to random 1 or 2 if timeout
+		player.conn.WriteMessage(websocket.TextMessage, []byte("Timeout! You were assigned: "+fmt.Sprint(player.number)))
 	}
-	player.number = int(msg[0] - '0')
 
 	// Check if two players are connected
 	if len(players) == 2 {
