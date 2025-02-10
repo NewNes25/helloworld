@@ -77,9 +77,8 @@ func main() {
 		port = "8080"
 	}
 
-	// Serve static files (client.html)
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
+	// Serve index.html as the homepage
+	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	// Handle WebSocket connections
 	http.HandleFunc("/ws", handleConnection)
