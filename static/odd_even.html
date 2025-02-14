@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odd or Even Game</title>
+</head>
+<body>
+    <h2>Odd or Even Game</h2>
+    
+    <button onclick="connectWebSocket()">Connect</button>
+    <button onclick="disconnectWebSocket()">Disconnect</button>
+    <br><br>
+
+    <button onclick="sendNumber(1)">Choose 1</button>
+    <button onclick="sendNumber(2)">Choose 2</button>
+
+    <p id="status">Status: Disconnected</p>
+    <p id="result"></p>
+
+    <script>
+        let ws;
+
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+
+            ws = new WebSocket("wss://" + window.location.host + "/ws/odd_even");
+
+            ws.onopen = () => {
+                document.getElementById("status").textContent = "Status: Connected";
+            };
+
+            ws.onmessage = (event) => {
+                document.getElementById("result").textContent = event.data;
+            };
+
+            ws.onclose = () => {
+                document.getElementById("status").textContent = "Status: Disconnected";
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendNumber(number) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(number.toString());
+            } else {
+                alert("Connect first!");
+            }
+        }
+    </script>
+</body>
+</html>

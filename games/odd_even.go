@@ -1,11 +1,10 @@
-package main
+package games
 
 import (
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -24,21 +23,22 @@ type Player struct {
 
 var players []*Player
 
-func handleConnection(w http.ResponseWriter, r *http.Request) {
+func HandleOddEvenGame(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("WebSocket upgrade error:", err)
 		return
 	}
+
 	defer conn.Close()
 
 	player := &Player{conn: conn}
 	players = append(players, player)
 
-	// Channel to receive number from the player
+	// Channel to receive number
 	numberChan := make(chan int)
 
-	// Start a goroutine to wait for player input
+	// Goroutine to wait for player input
 	go func() {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
@@ -57,11 +57,10 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	case num := <-numberChan:
 		player.number = num
 	case <-time.After(10 * time.Second):
-		player.number = rand.Intn(2) + 1 // Default to random 1 or 2 if timeout
+		player.number = rand.Intn(2) + 1
 		player.conn.WriteMessage(websocket.TextMessage, []byte("Timeout! You were assigned: "+fmt.Sprint(player.number)))
 	}
 
-	// Check if two players are connected
 	if len(players) == 2 {
 		determineWinner()
 	}
@@ -78,26 +77,8 @@ func determineWinner() {
 		result = "Player 1 wins!"
 	}
 
-	// Send results to players
 	p1.conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("You: %d, Opponent: %d. %s", p1.number, p2.number, result)))
 	p2.conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("You: %d, Opponent: %d. %s", p2.number, p1.number, result)))
 
-	// Reset players for the next round
 	players = []*Player{}
-}
-
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	// Serve index.html as the homepage
-	http.Handle("/", http.FileServer(http.Dir("./static")))
-
-	// Handle WebSocket connections
-	http.HandleFunc("/ws", handleConnection)
-
-	log.Println("Server running on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
