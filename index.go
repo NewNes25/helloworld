@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"myproject/games"
+	"helloworld/games"
 )
 
 func main() {
