@@ -29,7 +29,7 @@
         let ws;
 
         document.getElementById("connectBtn").addEventListener("click", () => {
-            ws = new WebSocket("wss://helloworld-5l58.onrender.com/ws");
+            ws = new WebSocket("wss://helloworld-5l58.onrender.com/ws/odd_even");
 
             ws.onopen = () => {
                 document.getElementById("status").innerText = "Connected! Choose 1 or 2.";
