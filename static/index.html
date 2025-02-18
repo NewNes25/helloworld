@@ -3,67 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Odd/Even Game</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px;
-            font-size: 16px;
-        }
-    </style>
+    <title>Odd or Even Game</title>
 </head>
 <body>
-    <h1>Odd/Even WebSocket Game</h1>
-    <button id="connectBtn">Connect</button>
+    <h2>Odd or Even Game</h2>
+    
+    <button onclick="connectWebSocket()">Connect</button>
+    <button onclick="disconnectWebSocket()">Disconnect</button>
     <br><br>
-    <input type="number" id="numberInput" placeholder="Enter 1 or 2" min="1" max="2" disabled>
-    <button id="sendBtn" disabled>Send</button>
-    <p id="status">Not connected</p>
+
+    <button onclick="sendNumber(1)">Choose 1</button>
+    <button onclick="sendNumber(2)">Choose 2</button>
+
+    <p id="status">Status: Disconnected</p>
+    <p id="result"></p>
 
     <script>
         let ws;
 
-        document.getElementById("connectBtn").addEventListener("click", () => {
-            ws = new WebSocket("wss://helloworld-5l58.onrender.com/ws/odd_even");
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+
+            ws = new WebSocket("wss://" + window.location.host + "/ws/odd_even");
 
             ws.onopen = () => {
-                document.getElementById("status").innerText = "Connected! Choose 1 or 2.";
-                document.getElementById("numberInput").disabled = false;
-                document.getElementById("sendBtn").disabled = false;
+                document.getElementById("status").textContent = "Status: Connected";
             };
 
-            ws.onmessage = (msg) => {
-                document.getElementById("status").innerText = "Result: " + msg.data;
-            };
-
-            ws.onerror = (err) => {
-                console.error("WebSocket Error:", err);
-                document.getElementById("status").innerText = "Connection error!";
+            ws.onmessage = (event) => {
+                document.getElementById("result").textContent = event.data;
             };
 
             ws.onclose = () => {
-                document.getElementById("status").innerText = "Connection closed!";
-                document.getElementById("numberInput").disabled = true;
-                document.getElementById("sendBtn").disabled = true;
+                document.getElementById("status").textContent = "Status: Disconnected";
             };
-        });
+        }
 
-        document.getElementById("sendBtn").addEventListener("click", () => {
-            const number = document.getElementById("numberInput").value;
-            if (number !== "1" && number !== "2") {
-                alert("Please enter 1 or 2.");
-                return;
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
             }
-            ws.send(number);
-            document.getElementById("status").innerText = "Waiting for opponent...";
-            document.getElementById("numberInput").disabled = true;
-            document.getElementById("sendBtn").disabled = true;
-        });
+        }
+
+        function sendNumber(number) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(number.toString());
+            } else {
+                alert("Connect first!");
+            }
+        }
     </script>
 </body>
 </html>
